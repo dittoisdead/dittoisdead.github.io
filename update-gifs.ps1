@@ -29,8 +29,8 @@ $i = 0
 foreach ($g in $gifs) {
     $i++
     $rel = $g.FullName.Substring($root.Length).TrimStart('\','/') -replace '\\','/'
-    $gridLines += '      <figure><a href="#gif{0}"><img src="{1}" alt=""></a></figure>' -f $i, $rel
-    $lbLines   += '  <a class="lightbox" id="gif{0}" href="#"><span class="close">&times;</span><img src="{1}" alt=""></a>' -f $i, $rel
+    $gridLines += '      <figure><a href="#gif{0}"><img src="{1}" alt="" loading="lazy"></a></figure>' -f $i, $rel
+    $lbLines   += '  <a class="lightbox" id="gif{0}" href="#"><span class="close">&times;</span><img src="{1}" alt="" loading="lazy"></a>' -f $i, $rel
 }
 
 $gridBlock = "<!-- AUTO-GRID:START  (everything between these markers is rewritten by update-gifs.bat) -->`r`n" +
