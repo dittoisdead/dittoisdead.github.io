@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ditto is dead</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo" href="index.html">
+      ditto is dead
+    </a>
+    <nav class="nav">
+      <a href="index.html">home</a>
+      <a href="gifs.html" aria-current="page">gifs</a>
+      <a href="video.html">video</a>
+      <a href="games.html">games</a>
+    </nav>
+  </header>
+
+  <main class="gallery-main">
+    <div class="grid">
+      <!--
+        Each item is TWO pieces:
+          1. a thumbnail link:  <a href="#imgN"> ... </a>
+          2. a full-view overlay below: <a class="lightbox" id="imgN" href="#"> ... </a>
+        To add an image: copy one thumbnail + its matching overlay and give it a new id.
+      -->
+      <figure><a href="#anzy1"><img src="images/anzykoan2.gif" alt=""></a></figure>
+      <figure><a href="#anzy2"><img src="images/anzykoan3.gif" alt=""></a></figure>
+      
+      <figure><a href="#doodle1"><img src="images/doodles/7.gif" alt=""></a></figure>
+      <figure><a href="#doodle2"><img src="images/doodles/16.gif" alt=""></a></figure>
+      <figure><a href="#doodle3"><img src="images/doodles/19.gif" alt=""></a></figure>
+
+      <figure><a href="#wolf1"><img src="images/into_wolf/46.gif" alt=""></a></figure>
+
+      <figure><a href="#pout1"><img src="images/pout/38.gif" alt=""></a></figure>
+      <figure><a href="#pout2"><img src="images/pout/67.gif" alt=""></a></figure>
+      <figure><a href="#pout3"><img src="images/pout/71.gif" alt=""></a></figure>
+      <figure><a href="#pout4"><img src="images/pout/107.gif" alt=""></a></figure>
+      <figure><a href="#pout5"><img src="images/pout/110.gif" alt=""></a></figure>
+    </div>
+  </main>
+
+  <!-- Full-view overlays. Click anywhere (or the ×) to close. -->
+  <a class="lightbox" id="anzy1" href="#"><span class="close">&times;</span><img src="images/anzykoan2.gif" alt=""></a>
+  <a class="lightbox" id="anzy2" href="#"><span class="close">&times;</span><img src="images/anzykoan3.gif" alt=""></a>
+  
+  <a class="lightbox" id="doodle1" href="#"><span class="close">&times;</span><img src="images/doodles/7.gif" alt=""></a>
+  <a class="lightbox" id="doodle2" href="#"><span class="close">&times;</span><img src="images/doodles/16.gif" alt=""></a>
+  <a class="lightbox" id="doodle3" href="#"><span class="close">&times;</span><img src="images/doodles/19.gif" alt=""></a>
+
+  <a class="lightbox" id="wolf1" href="#"><span class="close">&times;</span><img src="images/into_wolf/46.gif" alt=""></a>
+
+  <a class="lightbox" id="pout1" href="#"><span class="close">&times;</span><img src="images/pout/38.gif" alt=""></a>
+  <a class="lightbox" id="pout2" href="#"><span class="close">&times;</span><img src="images/pout/67.gif" alt=""></a>
+  <a class="lightbox" id="pout3" href="#"><span class="close">&times;</span><img src="images/pout/71.gif" alt=""></a>
+  <a class="lightbox" id="pout4" href="#"><span class="close">&times;</span><img src="images/pout/107.gif" alt=""></a>
+  <a class="lightbox" id="pout5" href="#"><span class="close">&times;</span><img src="images/pout/110.gif" alt=""></a>
+</body>
+</html>
