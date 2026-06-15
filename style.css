@@ -139,7 +139,8 @@ a:hover, a:focus { text-decoration: underline; }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  /* >=180px per tile, but never more than 6 per row (the 5rem = 5 gaps of 1rem) */
+  grid-template-columns: repeat(auto-fill, minmax(max(180px, (100% - 5rem) / 6), 1fr));
   gap: 1rem;
 }
 
@@ -154,7 +155,8 @@ a:hover, a:focus { text-decoration: underline; }
 .grid img {
   display: block;
   width: 100%;
-  height: 180px;
+  aspect-ratio: 1 / 1;
+  height: auto;
   object-fit: cover;
 }
 
@@ -175,26 +177,55 @@ a:focus-visible,
   .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 }
 
-/* ---- Lightbox (pure CSS, uses :target) ---- */
-.grid a { display: block; }
+/* ---- Lightbox (pure CSS, radio-driven so scroll position is kept) ---- */
+.grid label { display: block; cursor: pointer; }
+
+/* hidden radios that drive which lightbox (if any) is open */
+.lb-toggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
 
 .lightbox {
   position: fixed;
   inset: 0;
   z-index: 20;
   display: none;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2.5rem;
+  padding: 2.5rem 1.5rem;
   background: rgba(10, 10, 12, 0.92);
+}
+
+/* a checked radio reveals the lightbox immediately after it */
+.lb-toggle:checked + .lightbox { display: flex; }
+
+/* full-area click target behind the image closes the lightbox */
+.lightbox .backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   cursor: zoom-out;
 }
 
-.lightbox:target { display: flex; }
-
-.lightbox img {
+.lightbox .shot {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   max-width: 100%;
   max-height: 100%;
+}
+
+.lightbox .shot img {
+  max-width: 100%;
+  max-height: 80vh;
   width: auto;
   height: auto;
   object-fit: contain;        /* full image, never cropped */
@@ -202,17 +233,49 @@ a:focus-visible,
   background: var(--panel);
 }
 
+.lightbox figcaption {
+  margin-top: 0.85rem;
+  max-width: 60ch;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.lightbox figcaption:empty { display: none; }   /* no caption -> no empty gap */
+
 .lightbox .close {
   position: absolute;
   top: 1rem;
   right: 1.25rem;
+  z-index: 2;
   font-size: 1.75rem;
   line-height: 1;
   color: var(--text-dim);
-  text-decoration: none;
+  cursor: pointer;
 }
 
 .lightbox .close:hover { color: var(--text); }
+
+/* previous / next controls */
+.lightbox .lb-prev,
+.lightbox .lb-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  padding: 0.5rem 0.75rem;
+  font-size: 2.5rem;
+  line-height: 1;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+}
+
+.lightbox .lb-prev { left: 0.75rem; }
+.lightbox .lb-next { right: 0.75rem; }
+
+.lightbox .lb-prev:hover,
+.lightbox .lb-next:hover { color: var(--text); }
 
 /* ---- Content pages (video, games) ---- */
 .page {
