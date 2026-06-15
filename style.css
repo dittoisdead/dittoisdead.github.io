@@ -180,9 +180,13 @@ a:focus-visible,
 /* ---- Lightbox (pure CSS, radio-driven so scroll position is kept) ---- */
 .grid label { display: block; cursor: pointer; }
 
-/* hidden radios that drive which lightbox (if any) is open */
+/* hidden radios that drive which lightbox (if any) is open.
+   position:fixed keeps them in the viewport, so clicking a thumbnail
+   never scrolls the page to reach an off-screen radio. */
 .lb-toggle {
-  position: absolute;
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 1px;
   height: 1px;
   opacity: 0;
