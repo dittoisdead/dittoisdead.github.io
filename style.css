@@ -139,8 +139,8 @@ a:hover, a:focus { text-decoration: underline; }
 
 .grid {
   display: grid;
-  /* >=180px per tile, but never more than 6 per row (the 5rem = 5 gaps of 1rem) */
-  grid-template-columns: repeat(auto-fill, minmax(max(180px, (100% - 5rem) / 6), 1fr));
+  /* >=180px per tile, but never more than 4 per row (the 5rem = 5 gaps of 1rem) */
+  grid-template-columns: repeat(auto-fill, minmax(max(180px, (100% - 5rem) / 4), 1fr));
   gap: 1rem;
 }
 
