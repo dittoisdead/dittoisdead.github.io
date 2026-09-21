@@ -1,44 +1,747 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ditto is dead</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ditto is dead</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=IM+Fell+English:ital@0;1&family=Tagesschrift&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+<style>
+  /* colours come from style.css: --bg --panel --text --text-dim --border --border-soft --link */
+
+  /* reserve the scrollbar's width up front, so it appearing can't change the column count */
+  html{scrollbar-gutter:stable}
+
+  /* the site header stays put while the grid scrolls under it */
+  .site-header{position:sticky; top:0; z-index:20; background:var(--bg)}
+
+  /* ---------- grid ---------- */
+  #grid{position:relative; display:grid; flex:none}   /* height set from script */
+
+  /* TEXT: force grayscale AA into a layer, then threshold its alpha to 1 bit.
+     Per text cell rather than on the whole grid: the grid is many screens
+     tall, and one filter over all of it would be huge and slow. */
+  body.hard .cell.txt{filter:url(#hardedge)}
+  body.hard .ln{-webkit-font-smoothing:none; -moz-osx-font-smoothing:grayscale; font-smooth:never}
+
+  /* GIFS: opaque pixels, so the alpha threshold cannot reach them. Scale them
+     nearest-neighbour instead, so stretching keeps hard pixel edges. */
+  body.hard .plate{
+    image-rendering:pixelated;
+    image-rendering:crisp-edges;
+  }
+
+  /* Text stays selectable. Suppress selection only on the handles themselves,
+     and globally for the duration of a drag. */
+  .handle{touch-action:none; user-select:none}
+  body.dragging, body.dragging *{user-select:none !important}
+
+  .cell{position:relative; overflow:hidden}
+
+  /* the fixed-size layer that gets non-uniformly scaled by the drag */
+  .inner{
+    position:absolute; top:0; left:0;
+    transform-origin:0 0; will-change:transform; overflow:hidden;
+  }
+
+  /* one line of type, scaled on both axes to exactly fill its slice */
+  .ln{
+    position:absolute; left:0; top:0; white-space:nowrap; transform-origin:0 0;
+    font-family:"IM Fell English",Georgia,serif;
+  }
+  .ln a{color:inherit; text-decoration:none}
+  .ln a:hover, .ln a:focus-visible{text-decoration:underline; outline:none}
+
+  .plate{display:block; width:100%; height:100%; cursor:zoom-in}
+
+  /* ---------- lightbox: outside #grid, so the edge filter never touches it ---------- */
+  #lightbox{
+    position:fixed; inset:0; z-index:50;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(10,10,12,.92);     /* same backdrop as the gifs page */
+    cursor:zoom-out;
+  }
+  #lightbox[hidden]{display:none}
+  #lb-img{display:block; border:1px solid var(--border); background:var(--panel); cursor:default}
+  body.hard #lb-img{image-rendering:pixelated; image-rendering:crisp-edges}
+
+  /* ---------- drag handles ---------- */
+  .handle{position:absolute; z-index:10; background:transparent}
+  .handle::after{content:""; position:absolute; background:var(--link); opacity:0; transition:opacity .1s}
+  .handle:hover::after,.handle.active::after{opacity:1}
+  .handle.v{width:11px; margin-left:-5.5px; cursor:col-resize}
+  .handle.v::after{top:0; bottom:0; left:4px; width:3px}
+  .handle.h{height:11px; margin-top:-5.5px; cursor:row-resize}
+  .handle.h::after{left:0; right:0; top:4px; height:3px}
+  .handle.c{width:19px; height:19px; margin:-9.5px 0 0 -9.5px; z-index:11; cursor:move}
+  .handle.c::after{inset:5px; border-radius:50%; background:var(--text)}
+</style>
 </head>
-<body>
-  <header class="site-header">
-    <a class="logo" href="index.html">
-      ditto is dead
-    </a>
+<body class="hard">
 
-    <nav class="nav">
-      <a href="index.html" aria-current="page">home</a>
-      <a href="gifs.html">gifs</a>
-      <a href="video.html">video</a>
-      <a href="games.html">games</a>
-    </nav>
-  </header>
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <filter id="hardedge" x="-2%" y="-2%" width="104%" height="104%"
+          color-interpolation-filters="sRGB">
+    <feComponentTransfer><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer>
+  </filter>
+</svg>
 
-  <main class="center-wrap">
-    <section class="card">
-      <h1>ditto is dead</h1>
-      <p>hope that doesn't bother you.<br>if you need to get in touch: </p>
+<header class="site-header">
+  <a class="logo" href="index.html">
+    ditto is dead
+  </a>
 
-      <ul class="contact">
-        <li><span class="label">email</span><a href="mailto:dittoisdead@gmail.com">dittoisdead@gmail.com</a></li>
-        <li><span class="label">bluesky</span><a href="https://bsky.app/profile/dittoisdead.bsky.social">@dittoisdead</a></li>
-      </ul>
+  <nav class="nav">
+    <a href="index.html" aria-current="page">home</a>
+    <a href="gifs.html">gifs</a>
+    <a href="video.html">video</a>
+    <a href="games.html">games</a>
+  </nav>
+</header>
 
-      <div class="links">
-        <a href="gifs.html">gifs</a>
-        <a href="video.html">video</a>
-        <a href="games.html">games</a>
-      </div>
-    </section>
-  </main>
+<div id="grid"></div>
+
+<div id="lightbox" hidden><img id="lb-img" alt=""></div>
+
+<script>
+(function(){
+  // Target cell size in DEVICE pixels, so OS display scaling doesn't change the
+  // count. Half a 4K screen is ~1920 device px wide, giving 4 columns there and
+  // 8 when fullscreen. Raise it for fewer, bigger cells; lower it for more.
+  const CELL = 480;
+  let COLS = 4;       // columns across the page
+  let SCREEN = 4;     // rows that fit in one screen
+  let ROWS = 4;       // rows in the whole page, enough to hold every gif
+
+  const MINSHARE = 0.16;     // a track may shrink to 16% of its equal share
+  const BASE = 100;          // px: the size everything is measured at
+  const grid = document.getElementById('grid');
+  const header = document.querySelector('.site-header');
+
+  // the visible height below the sticky header
+  const viewH = () => document.documentElement.clientHeight - header.offsetHeight;
+
+  function counts(){
+    const d = window.devicePixelRatio || 1;
+    return [
+      Math.max(1, Math.round(grid.clientWidth * d / CELL)),
+      Math.max(1, Math.round(viewH()          * d / CELL))
+    ];
+  }
+
+  // SCREEN rows fill the view exactly; the page is ROWS of them tall
+  function sizeGrid(){
+    grid.style.height = (ROWS * viewH() / SCREEN) + 'px';
+  }
+
+  // fresh every reload
+  let seed = ((Date.now() ^ (Math.random() * 0xFFFFFFFF)) >>> 0) || 1;
+  const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+
+  const FILLER = 'var(--text-dim)';   // the question lines: grey
+  const LABEL  = 'var(--text)';       // "ditto is dead." and the contact labels: off-white
+  const LINK   = 'var(--link)';       // the contact links: purple
+
+  /* ---------- the two fixed boxes ---------- */
+
+  const NAME = ['ditto', 'is', 'dead.'];
+
+  // one entry per line, each line a run of segments; forced breaks, never re-wrapped
+  const CONTACT = [
+    [ { text:'contact:' } ],
+    [ { text:'email ' },
+      { text:'dittoisdead@gmail.com', href:'mailto:dittoisdead@gmail.com', color:LINK } ],
+    [ { text:'bluesky ' },
+      { text:'@dittoisdead', href:'https://bsky.app/profile/dittoisdead.bsky.social', color:LINK } ]
+  ];
+
+  /* ---------- copy ---------- */
+
+  const LINES = [
+    "you can always just give up",
+    "there’s no shame in giving up",
+    "suffering is what makes me human, after all",
+    "it might be good for you even if it feels bad",
+    "you might be on the right path",
+    "you may well be on the wrong path",
+    "there is no point to any of it",
+    "the sky looks nice tonight",
+    "do you want to slide into obscurity?",
+    "are you alone with your thoughts too much?",
+    "do you get obsessed with things?",
+    "are you uncomfortable with your thoughts?",
+    "are you a good friend to yourself?",
+    "do you like yourself?",
+    "am i important to you?",
+    "when did it all begin?",
+    "when is it all going to end?",
+    "was it always like this?",
+    "do you think time moves too quick?",
+    "do you think time moves too slow?",
+    "is this it?",
+    "the air feels good in my hair.",
+    "i thought of you and smiled.",
+    "i deserve this.",
+    "do you deserve this?",
+    "this is it."
+  ];
+
+  // Draw from a shuffled bag, so nothing repeats until the pool is spent —
+  // then reshuffle into a NEW order rather than replaying the same lap, so
+  // which line follows which is different every time round.
+  let bag = [], draw = 0, last = -1;
+
+  function fillBag(){
+    bag = LINES.map((_, i) => i);
+    for(let i = bag.length - 1; i > 0; i--){
+      const j = Math.floor(rnd() * (i + 1));
+      const t = bag[i]; bag[i] = bag[j]; bag[j] = t;
+    }
+    // never let a new lap open with the line the previous lap closed on
+    if(bag[0] === last){
+      const j = 1 + Math.floor(rnd() * (bag.length - 1));
+      const t = bag[0]; bag[0] = bag[j]; bag[j] = t;
+    }
+    draw = 0;
+  }
+
+  function reBag(){ last = -1; fillBag(); }
+
+  function pull(k){
+    const out = [];
+    for(let i=0; i<k; i++){
+      if(draw >= bag.length) fillBag();
+      last = bag[draw++];
+      out.push(LINES[last]);
+    }
+    return out.join(' ').split(' ');
+  }
+
+  /* ---------- gifs ---------- */
+
+  const IMAGE_SHARE = 0.50;   // fraction of blocks that get a gif; the rest get text
+
+  // The live list is read from gifs.html at load (see loadGifs), so anything
+  // update-gifs.ps1 adds there shows up here too. This built-in list is only
+  // the fallback, for when that read fails — e.g. opening the file straight
+  // from disk, where browsers block fetch().
+  let GIFS = [
+    '7drl_14.gif', 'BOD2.gif', 'SWORD_10.gif', 'almost_soft_bodies.gif',
+    'anzykoan2.gif', 'anzykoan3.gif', 'boids1.gif', 'boids2.gif',
+    'disc_room_1.gif', 'disc_room_2.gif', 'djupt1.gif', 'djupt2.gif',
+    'djupt3.gif', 'djupt4.gif', 'djupt5.gif', 'done1.gif',
+    'doodles/16.gif', 'doodles/19.gif', 'doodles/23.gif', 'doodles/7.gif',
+    'doodles/boids3.gif', 'doodles/constalletions7.gif', 'doodles/lineart1.gif',
+    'doodles/quads8.gif', 'doodles/strings2.gif', 'fireproject_26.gif',
+    'icons1_short2.gif', 'into_wolf_13.gif', 'into_wolf_27.gif', 'into_wolf_44.gif',
+    'necro1.gif', 'nectro 2.gif', 'planeter_28.gif', 'pout/107.gif',
+    'pout/110.gif', 'pout/38.gif', 'pout/67.gif', 'pout/71.gif',
+    'pout_planeter.gif', 'shitty_tealing.gif', 'shitty_tealing4.gif',
+    'special20.gif', 'special22.gif', 'untitled_platformer_20.gif', 'vaeret1.gif',
+    'verlet/dancing_spags2.gif', 'verlet/hairs.gif', 'verlet/man1.gif',
+    'verlet/repetition.gif', 'verlet/worms.gif'
+  ].map(f => 'images/gifs/' + f);
+
+  async function loadGifs(){
+    try{
+      const res = await fetch('gifs.html', { cache: 'no-cache' });
+      if(!res.ok) return;
+      // an inert parsed document: none of its images start downloading
+      const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+      const found = [...new Set(
+        [...doc.querySelectorAll('.grid img')].map(i => i.getAttribute('src')).filter(Boolean)
+      )];
+      if(found.length) GIFS = found;
+    } catch(e){ /* keep the built-in list */ }
+  }
+
+  const shuffled = n => {
+    const a = Array.from({length:n}, (_, i) => i);
+    for(let i = n - 1; i > 0; i--){
+      const j = Math.floor(rnd() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  };
+
+  // same bag trick as the lines: no gif repeats until they've all been shown
+  let gifBag = [], gifDraw = 0;
+  function nextGif(){
+    if(gifDraw >= gifBag.length){ gifBag = shuffled(GIFS.length); gifDraw = 0; }
+    const path = GIFS[gifBag[gifDraw++]];
+    // paths may arrive raw ("nectro 2.gif") or already escaped; normalise either way
+    let clean = path;
+    try{ clean = decodeURI(path); } catch(e){}
+    return encodeURI(clean);
+  }
+
+  /* ---------- a random tiling of the lattice ----------
+     Always fill the top-left-most free square. Because of that the map can
+     never strand a hole, so every roll produces a complete, legal tiling.  */
+
+  const SIZES = [ [1,1,46], [2,1,20], [1,2,16], [2,2,9], [3,1,6], [1,3,3] ];
+
+  function makeTiling(){
+    const map = Array.from({length:ROWS}, () => new Array(COLS).fill(-1));
+    const blocks = [];
+    for(let r=0; r<ROWS; r++){
+      for(let c=0; c<COLS; c++){
+        if(map[r][c] !== -1) continue;
+        const fits = SIZES.filter(([cs, rs]) => {
+          if(c + cs > COLS || r + rs > ROWS) return false;
+          for(let j=r; j<r+rs; j++) for(let i=c; i<c+cs; i++) if(map[j][i] !== -1) return false;
+          return true;
+        });
+        const tot = fits.reduce((a, b) => a + b[2], 0);
+        let x = rnd() * tot, pick = fits[0];
+        for(const f of fits){ x -= f[2]; if(x <= 0){ pick = f; break; } }
+
+        const cs = pick[0], rs = pick[1], n = blocks.length;
+        for(let j=r; j<r+rs; j++) for(let i=c; i<c+cs; i++) map[j][i] = n;
+        blocks.push([c + 1, r + 1, cs, rs]);
+      }
+    }
+    return { blocks, map };
+  }
+
+  /* ---------- state ---------- */
+
+  let own = [], cells = [], segs = [];
+  let col = new Array(COLS).fill(1), row = new Array(ROWS).fill(1);
+  let natW = 0, natH = 0;
+  let built = false;
+
+  const sum   = a => a.reduce((x,y)=>x+y, 0);
+  const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
+
+  /* ---------- build ---------- */
+
+  function setSpec(cell, spec){
+    cell.spec = spec;
+    cell.el.classList.add('txt');
+    cell.el.style.color = spec.color;
+    cell.el.style.boxShadow = 'inset 0 0 0 1px var(--border)';
+  }
+
+  // give a cell a run of question lines and a face
+  function makeText(cell){
+    // one line usually, more where the cell spans extra tracks
+    const roll = rnd();
+    let k = roll < 0.55 ? 1 : roll < 0.85 ? 2 : 3;
+    if(cell.cs * cell.rs >= 2) k += 1;
+    if(cell.cs * cell.rs >= 4) k += 1;
+
+    const gothic = rnd() < 0.22;
+    setSpec(cell, {
+      words : pull(k),
+      family: gothic ? 'Tagesschrift' : 'IM Fell English',
+      italic: !gothic && rnd() < 0.24,
+      color : FILLER
+    });
+  }
+
+  function makeName(cell){
+    setSpec(cell, {
+      words : NAME,
+      family: rnd() < 0.5 ? 'Tagesschrift' : 'IM Fell English',
+      italic: false,
+      color : LABEL
+    });
+  }
+
+  // always the roman Fell: the address has to stay legible when squashed
+  function makeContact(cell){
+    setSpec(cell, { lines: CONTACT, family: 'IM Fell English', italic: false, color: LABEL });
+  }
+
+  function build(){
+    [COLS, SCREEN] = counts();
+    grid.textContent = '';
+    cells = []; segs = [];
+    reBag();
+
+    // Every gif once, plus enough text blocks to keep the IMAGE_SHARE ratio.
+    // Add rows until the tiling has room for all of them; any spare blocks
+    // become text.
+    const nGif  = GIFS.length;
+    const nText = Math.max(2, Math.round(nGif * (1 - IMAGE_SHARE) / IMAGE_SHARE));
+    const need  = nGif + nText;
+
+    ROWS = Math.max(SCREEN, Math.ceil(need * 1.4 / COLS));
+    let tiling = makeTiling();
+    while(tiling.blocks.length < need){ ROWS++; tiling = makeTiling(); }
+    own = tiling.map;
+
+    const blocks = tiling.blocks;
+    const nb = blocks.length;
+    const kinds = new Array(nb).fill('t');
+    const pickFrom = a => a[Math.floor(rnd() * a.length)];
+
+    // The two fixed boxes go only in blocks lying wholly inside the first
+    // screen. The contact box prefers one spanning 2+ squares, so the address
+    // has room. Blocks are numbered top-down, so 0 and 1 are the fallback.
+    const first = blocks.map((b, q) => q).filter(q => blocks[q][1] + blocks[q][3] - 1 <= SCREEN);
+    const roomy = first.filter(q => blocks[q][2] * blocks[q][3] >= 2);
+    const cq = first.length ? pickFrom(roomy.length ? roomy : first) : 0;
+    kinds[cq] = 'contact';
+    const others = first.filter(q => q !== cq);
+    const nq = others.length ? pickFrom(others) : (cq === 0 ? 1 : 0);
+    if(nq < nb) kinds[nq] = 'name';
+
+    // then every gif, once each, scattered over the remaining blocks
+    shuffled(nb).filter(q => kinds[q] === 't').slice(0, nGif).forEach(q => kinds[q] = 'i');
+    gifBag = []; gifDraw = 0;
+
+    blocks.forEach(([c, r, cs, rs], n) => {
+      const el = document.createElement('div');
+      el.className = 'cell';
+      el.style.gridColumn = c + ' / span ' + cs;
+      el.style.gridRow    = r + ' / span ' + rs;
+
+      const inner = document.createElement('div');
+      inner.className = 'inner';
+      el.appendChild(inner);
+      grid.appendChild(el);
+
+      const cell = { el, inner, spec: null, cs, rs };
+      cells.push(cell);
+
+      if(kinds[n] === 'i'){
+        const img = document.createElement('img');
+        img.className = 'plate';
+        img.alt = '';
+        img.draggable = false;
+        img.decoding = 'async';
+        img.loading = 'lazy';     // only fetch gifs as they scroll near the view
+        // a gif that can't load becomes a text block, never a broken-image icon
+        img.onerror = () => {
+          img.remove();
+          makeText(cell);
+          if(natW) typeset(inner, cell.spec, natW * cs, natH * rs);
+        };
+        img.src = nextGif();
+        inner.appendChild(img);
+        el.style.boxShadow = 'inset 0 0 0 1px var(--border)';
+      }
+      else if(kinds[n] === 'contact') makeContact(cell);
+      else if(kinds[n] === 'name')    makeName(cell);
+      else                            makeText(cell);
+    });
+
+    sizeGrid();
+    makeHandles();
+    shuffle();
+    applyTemplate();
+    run();
+    built = true;
+  }
+
+  /* ---------- typesetting ---------- */
+
+  const meas = document.createElement('canvas').getContext('2d');
+  const fontOf = (s, px) => (s.italic ? 'italic ' : '') + px + 'px "' + s.family + '", Georgia, serif';
+
+  // split words into at most L lines of roughly equal natural width
+  function breakLines(words, w, sp, target, L){
+    const lines = [];
+    let i = 0;
+    for(let l=0; l<L; l++){
+      const linesLeft = L - l - 1;
+      const cur = [];
+      let width = 0;
+      while(i < words.length){
+        if(cur.length && words.length - i <= linesLeft) break;       // keep one for each later line
+        const add = (cur.length ? sp : 0) + w[i];
+        if(cur.length && width + add > target * 1.10 && words.length - i > linesLeft) break;
+        cur.push(words[i]); width += add; i++;
+      }
+      if(cur.length) lines.push(cur);
+    }
+    while(i < words.length) lines[lines.length-1].push(words[i++]);   // safety
+    return lines.map(a => a.join(' '));
+  }
+
+  // lay a cell's copy out so the ink touches all four edges of the box
+  function typeset(inner, spec, W, H){
+    meas.font = fontOf(spec, BASE);
+
+    const probe = meas.measureText('Hxpg');
+    const gh = (probe.actualBoundingBoxAscent + probe.actualBoundingBoxDescent) || BASE * 0.72;
+
+    // rows of segments: given outright (forced breaks), or broken from words
+    let rows;
+    if(spec.lines){
+      rows = spec.lines;
+    } else {
+      const sp = meas.measureText(' ').width;
+      const w  = spec.words.map(x => meas.measureText(x).width);
+      const total = w.reduce((a,b)=>a+b, 0) + sp * (spec.words.length - 1);
+
+      // line count that keeps the x- and y-distortion roughly equal
+      let L = Math.round(Math.sqrt((H * total) / (W * gh))) || 1;
+      L = Math.max(1, Math.min(spec.words.length, L));
+
+      rows = breakLines(spec.words, w, sp, total / L, L).map(t => [{ text: t }]);
+    }
+    const LH = H / rows.length;
+
+    inner.textContent = '';
+    rows.forEach((parts, idx) => {
+      const text = parts.map(p => p.text).join('');
+      const m = meas.measureText(text);
+
+      const inkL = m.actualBoundingBoxLeft;
+      const inkW = (inkL + m.actualBoundingBoxRight) || m.width;
+      const asc  = m.actualBoundingBoxAscent;
+      const inkH = (asc + m.actualBoundingBoxDescent) || gh;
+
+      // where the baseline sits inside a block whose line-height is BASE px
+      const fA = m.fontBoundingBoxAscent  || BASE * 0.80;
+      const fD = m.fontBoundingBoxDescent || BASE * 0.20;
+      const inkTop = (BASE - (fA + fD)) / 2 + fA - asc;
+
+      const sx = W / inkW, sy = LH / inkH;
+
+      const ln = document.createElement('div');
+      ln.className = 'ln';
+      for(const p of parts){
+        const node = document.createElement(p.href ? 'a' : 'span');
+        node.textContent = p.text;
+        if(p.color) node.style.color = p.color;
+        if(p.href){
+          node.href = p.href;
+          if(/^https?:/.test(p.href)){ node.target = '_blank'; node.rel = 'noopener'; }
+        }
+        ln.appendChild(node);
+      }
+      ln.style.fontFamily = '"' + spec.family + '", Georgia, serif';
+      ln.style.fontStyle  = spec.italic ? 'italic' : 'normal';
+      ln.style.fontSize   = BASE + 'px';
+      ln.style.lineHeight = BASE + 'px';
+      ln.style.top = (idx * LH) + 'px';
+      ln.style.transform = 'translate(' + (inkL * sx) + 'px,' + (-inkTop * sy) + 'px) '
+                         + 'scale(' + sx + ',' + sy + ')';
+      inner.appendChild(ln);
+    });
+  }
+
+  /* ---------- tracks ---------- */
+
+  function applyTemplate(){
+    grid.style.gridTemplateColumns = col.map(v=>v.toFixed(5)+'fr').join(' ');
+    grid.style.gridTemplateRows    = row.map(v=>v.toFixed(5)+'fr').join(' ');
+  }
+
+  // knock the grid off-square, so the page opens already warped
+  function shuffle(){
+    col = Array.from({length:COLS}, () => 1 + (rnd()-0.5) * 0.95);
+    row = Array.from({length:ROWS}, () => 1 + (rnd()-0.5) * 0.80);
+
+    // Rescale so the first screen's rows still add up to exactly one screen.
+    // Otherwise the random warp could push the fixed boxes below the fold.
+    const S = Math.min(SCREEN, ROWS);
+    const a = sum(row.slice(0, S));
+    for(let j=0; j<S; j++) row[j] *= S / a;
+    if(ROWS > S){
+      const b = sum(row.slice(S));
+      for(let j=S; j<ROWS; j++) row[j] *= (ROWS - S) / b;
+    }
+  }
+
+  function edges(){
+    const W = grid.clientWidth, H = grid.clientHeight;
+    const cS = sum(col), rS = sum(row);
+    const xs = [0], ys = [0];
+    for(let i=0;i<COLS;i++) xs.push(xs[i] + col[i]/cS * W);
+    for(let j=0;j<ROWS;j++) ys.push(ys[j] + row[j]/rS * H);
+    return {xs, ys};
+  }
+
+  /* ---------- handles, segmented to the real borders ---------- */
+
+  function makeHandles(){
+    const mk = cls => { const d = document.createElement('div'); d.className = 'handle ' + cls; grid.appendChild(d); return d; };
+    const vAt = (i, r) => own[r][i] !== own[r][i+1];   // border between cols i,i+1 at row r
+    const hAt = (j, c) => own[j][c] !== own[j+1][c];   // border between rows j,j+1 at col c
+
+    for(let i=0;i<COLS-1;i++)
+      for(let r=0;r<ROWS;r++)
+        if(vAt(i,r)) segs.push({t:'v', el:mk('v'), b:i, r:r});
+
+    for(let j=0;j<ROWS-1;j++)
+      for(let c=0;c<COLS;c++)
+        if(hAt(j,c)) segs.push({t:'h', el:mk('h'), b:j, c:c});
+
+    for(let j=0;j<ROWS-1;j++)
+      for(let i=0;i<COLS-1;i++)
+        if(vAt(i,j) && vAt(i,j+1) && hAt(j,i) && hAt(j,i+1))
+          segs.push({t:'c', el:mk('c'), i:i, j:j});
+
+    for(const s of segs){
+      if(s.t === 'v')      bind(s.el, s.b, null);
+      else if(s.t === 'h') bind(s.el, null, s.b);
+      else                 bind(s.el, s.i, s.j);
+    }
+  }
+
+  // Natural size = the size the cell would have with equal tracks, so the
+  // distortion comes only from how far you drag, not from the window size.
+  function transform(){
+    for(const c of cells){
+      c.inner.style.transform = 'scale(' + (c.el.clientWidth /(natW*c.cs)) + ','
+                                         + (c.el.clientHeight/(natH*c.rs)) + ')';
+    }
+  }
+
+  function sync(){
+    const e = edges(), xs = e.xs, ys = e.ys;
+    for(const s of segs){
+      if(s.t === 'v'){
+        s.el.style.left   = xs[s.b+1] + 'px';
+        s.el.style.top    = ys[s.r] + 'px';
+        s.el.style.height = (ys[s.r+1] - ys[s.r]) + 'px';
+      } else if(s.t === 'h'){
+        s.el.style.top   = ys[s.b+1] + 'px';
+        s.el.style.left  = xs[s.c] + 'px';
+        s.el.style.width = (xs[s.c+1] - xs[s.c]) + 'px';
+      } else {
+        s.el.style.left = xs[s.i+1] + 'px';
+        s.el.style.top  = ys[s.j+1] + 'px';
+      }
+    }
+    transform();
+  }
+
+  // re-establish the natural box and re-typeset (load + window resize only)
+  function baseline(){
+    natW = grid.clientWidth  / COLS;
+    natH = grid.clientHeight / ROWS;
+    for(const c of cells){
+      const W = natW * c.cs, H = natH * c.rs;
+      c.inner.style.width  = W + 'px';
+      c.inner.style.height = H + 'px';
+      if(c.spec) typeset(c.inner, c.spec, W, H);
+    }
+  }
+
+  function run(){ if(cells.length){ baseline(); sync(); } }
+
+  /* ---------- dragging ---------- */
+
+  function bind(el, ci, ri){
+    el.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      el.setPointerCapture(e.pointerId);
+      el.classList.add('active');
+      document.body.classList.add('dragging');
+
+      const sx = e.clientX, sy = e.clientY;
+      const gw = grid.clientWidth, gh = grid.clientHeight;
+      const c0 = col.slice(), r0 = row.slice();
+      const cS = sum(col), rS = sum(row);
+      const cMin = MINSHARE * cS / COLS, rMin = MINSHARE * rS / ROWS;
+
+      const move = ev => {
+        if(ci !== null){
+          const pair = c0[ci] + c0[ci+1];
+          const a = clamp(c0[ci] + (ev.clientX - sx) / gw * cS, cMin, pair - cMin);
+          col[ci] = a; col[ci+1] = pair - a;
+        }
+        if(ri !== null){
+          const pair = r0[ri] + r0[ri+1];
+          const a = clamp(r0[ri] + (ev.clientY - sy) / gh * rS, rMin, pair - rMin);
+          row[ri] = a; row[ri+1] = pair - a;
+        }
+        applyTemplate();
+        sync();
+      };
+      const up = () => {
+        el.classList.remove('active');
+        document.body.classList.remove('dragging');
+        el.removeEventListener('pointermove', move);
+        el.removeEventListener('pointerup', up);
+        el.removeEventListener('pointercancel', up);
+      };
+      el.addEventListener('pointermove', move);
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointercancel', up);
+    });
+  }
+
+  /* ---------- lightbox ---------- */
+
+  const lb = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lb-img');
+
+  // At most 2 screen pixels per gif pixel, smaller if the screen can't fit it.
+  // Worked out in DEVICE pixels, so display scaling can't inflate it, and in
+  // whole steps (1x or 2x) when enlarging, so pixel art keeps square pixels.
+  const LB_MAX = 2;
+
+  function fitLightbox(){
+    const nw = lbImg.naturalWidth, nh = lbImg.naturalHeight;
+    if(!nw || !nh) return;
+    const d = window.devicePixelRatio || 1;
+    const fit = Math.min(innerWidth * 0.9 / nw, innerHeight * 0.85 / nh) * d;
+    const s = Math.min(fit, LB_MAX);
+    const k = (s >= 1 ? Math.floor(s) : s) / d;
+    lbImg.style.width  = (nw * k) + 'px';
+    lbImg.style.height = (nh * k) + 'px';
+  }
+
+  function openLightbox(src){
+    lbImg.style.width = lbImg.style.height = '';
+    lbImg.onload = fitLightbox;
+    lbImg.src = src;
+    lb.hidden = false;
+    if(lbImg.complete) fitLightbox();
+  }
+
+  function closeLightbox(){
+    lb.hidden = true;
+    lbImg.removeAttribute('src');
+  }
+
+  grid.addEventListener('click', e => {
+    if(e.target.classList && e.target.classList.contains('plate')) openLightbox(e.target.src);
+  });
+  lb.addEventListener('click', e => { if(e.target !== lbImg) closeLightbox(); });
+  addEventListener('keydown', e => { if(e.key === 'Escape' && !lb.hidden) closeLightbox(); });
+  addEventListener('resize', () => { if(!lb.hidden) fitLightbox(); });
+
+  /* ---------- go ---------- */
+
+  // canvas metrics are only correct once the webfonts are actually loaded
+  const fontsReady = document.fonts ? Promise.all([
+    document.fonts.load(BASE + 'px "IM Fell English"'),
+    document.fonts.load('italic ' + BASE + 'px "IM Fell English"'),
+    document.fonts.load(BASE + 'px "Tagesschrift"')
+  ]) : Promise.resolve();
+
+  loadGifs().then(() => {
+    build();                          // fallback metrics, so nothing flashes empty
+    fontsReady.then(run, run);        // then re-fit with the real ones
+  });
+
+  // Same lattice: just re-fit. Lattice changed: build a new layout for it, but
+  // wait for the window to settle so a drag-resize doesn't reroll 50 times.
+  // (Watches the window, not the grid: the grid's height is ours to set.)
+  let rebuildTimer = 0;
+  addEventListener('resize', () => {
+    if(!built) return;
+    const [c, s] = counts();
+    if(c !== COLS || s !== SCREEN){
+      clearTimeout(rebuildTimer);
+      rebuildTimer = setTimeout(build, 150);
+    }
+    sizeGrid();
+    run();
+  });
+})();
+</script>
 </body>
 </html>
