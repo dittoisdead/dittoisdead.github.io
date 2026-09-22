@@ -183,5 +183,14 @@
   <input class="lb-toggle" type="radio" name="lb" id="r-gif50" aria-hidden="true">
   <div class="lightbox"><label class="backdrop" for="r-none" aria-label="close"></label><label class="close" for="r-none">&times;</label><label class="lb-prev" for="r-gif49" aria-label="previous">&lsaquo;</label><label class="lb-next" for="r-gif1" aria-label="next">&rsaquo;</label><figure class="shot"><img src="images/gifs/djupt2.gif" alt="" loading="lazy"><figcaption></figcaption></figure></div>
   <!-- AUTO-LIGHTBOX:END -->
+
+  <!-- The site's gif viewer (same as the home page). It reads the captions
+       above and replaces the overlays for display; they remain as the
+       fallback if JavaScript is off. -->
+  <script src="lightbox.js"></script>
+  <script>
+    siteLightbox.readCaptions(document);
+    siteLightbox.gallery('.grid img');
+  </script>
 </body>
 </html>

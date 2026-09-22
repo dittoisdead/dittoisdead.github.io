@@ -160,6 +160,89 @@ a:hover, a:focus { text-decoration: underline; }
   object-fit: cover;
 }
 
+/* ---- Site lightbox (lightbox.js) ----
+   The gif viewer on both the home grid and the gifs page. The older
+   radio-driven .lightbox further down is only the no-JavaScript fallback. */
+#lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 12, 0.92);
+  cursor: zoom-out;
+}
+
+#lightbox[hidden] { display: none; }
+
+#lb-fig {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: default;
+}
+
+/* the gif's filename, above the image */
+#lb-name {
+  margin-bottom: 0.6rem;
+  color: var(--text);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+#lb-img {
+  display: block;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  image-rendering: pixelated;      /* hard pixels when enlarged */
+  image-rendering: crisp-edges;
+}
+
+#lb-cap {
+  margin-top: 0.85rem;
+  max-width: 60ch;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+#lb-cap:empty { display: none; }
+
+#lightbox button {
+  position: absolute;
+  z-index: 2;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: 0;
+  font: inherit;
+  line-height: 1;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+}
+
+#lightbox button:hover { color: var(--text); }
+#lightbox button[hidden] { display: none; }
+
+#lightbox .lb-close {
+  top: 1rem;
+  right: 1.25rem;
+  padding: 0;
+  font-size: 1.75rem;
+}
+
+#lightbox .lb-prev,
+#lightbox .lb-next {
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2.5rem;
+}
+
+#lightbox .lb-prev { left: 0.75rem; }
+#lightbox .lb-next { right: 0.75rem; }
+
 /* ---- Accessibility / motion ---- */
 a:focus-visible,
 .nav a:focus-visible {

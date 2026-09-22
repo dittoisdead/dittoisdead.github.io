@@ -58,20 +58,7 @@
 
   .plate{display:block; width:100%; height:100%; cursor:zoom-in}
 
-  /* ---------- lightbox: outside #grid, so the edge filter never touches it ---------- */
-  #lightbox{
-    position:fixed; inset:0; z-index:50;
-    display:flex; align-items:center; justify-content:center;
-    background:rgba(10,10,12,.92);     /* same backdrop as the gifs page */
-    cursor:zoom-out;
-  }
-  #lightbox[hidden]{display:none}
-  #lb-fig{margin:0; display:flex; flex-direction:column; align-items:center; cursor:default}
-  #lb-img{display:block; border:1px solid var(--border); background:var(--panel)}
-  /* same caption styling as the gifs page lightbox */
-  #lb-cap{margin-top:.85rem; max-width:60ch; color:var(--text-dim); font-size:.95rem; text-align:center}
-  #lb-cap:empty{display:none}
-  body.hard #lb-img{image-rendering:pixelated; image-rendering:crisp-edges}
+  /* the gif viewer is shared with the gifs page: lightbox.js + "Site lightbox" in style.css */
 
   /* ---------- drag handles ---------- */
   .handle{position:absolute; z-index:10; background:transparent}
@@ -109,10 +96,7 @@
 
 <div id="grid"></div>
 
-<div id="lightbox" hidden>
-  <figure id="lb-fig"><img id="lb-img" alt=""><figcaption id="lb-cap"></figcaption></figure>
-</div>
-
+<script src="lightbox.js"></script>
 <script>
 (function(){
   // Target cell size in DEVICE pixels, so OS display scaling doesn't change the
@@ -253,12 +237,6 @@
     'verlet/repetition.gif', 'verlet/worms.gif'
   ].map(f => 'images/gifs/' + f);
 
-  // Captions are read from the same place: the <figcaption> under each gif in
-  // gifs.html's lightboxes. Edit a caption there and both pages show it.
-  // Keyed by absolute URL, so "nectro 2.gif" and "nectro%202.gif" match.
-  const CAPTIONS = new Map();
-  const urlKey = src => new URL(src, location.href).href;
-
   async function loadGifs(){
     try{
       const res = await fetch('gifs.html', { cache: 'no-cache' });
@@ -270,11 +248,8 @@
       )];
       if(found.length) GIFS = found;
 
-      for(const shot of doc.querySelectorAll('.lightbox .shot')){
-        const img = shot.querySelector('img'), cap = shot.querySelector('figcaption');
-        const html = cap ? cap.innerHTML.trim() : '';
-        if(img && html) CAPTIONS.set(urlKey(img.getAttribute('src')), html);
-      }
+      // the captions live in gifs.html too; hand them to the shared viewer
+      siteLightbox.readCaptions(doc);
     } catch(e){ /* keep the built-in list, no captions */ }
   }
 
@@ -693,51 +668,8 @@
 
   /* ---------- lightbox ---------- */
 
-  const lb = document.getElementById('lightbox');
-  const lbImg = document.getElementById('lb-img');
-  const lbCap = document.getElementById('lb-cap');
-
-  // At most 2 screen pixels per gif pixel, smaller if the screen can't fit it.
-  // Worked out in DEVICE pixels, so display scaling can't inflate it, and in
-  // whole steps (1x or 2x) when enlarging, so pixel art keeps square pixels.
-  const LB_MAX = 2;
-
-  function fitLightbox(){
-    const nw = lbImg.naturalWidth, nh = lbImg.naturalHeight;
-    if(!nw || !nh) return;
-    const d = window.devicePixelRatio || 1;
-    // leave room under the image for the caption, if there is one
-    const capH = lbCap.innerHTML ? lbCap.offsetHeight + 14 : 0;
-    const fit = Math.min(innerWidth * 0.9 / nw, (innerHeight * 0.85 - capH) / nh) * d;
-    const s = Math.min(fit, LB_MAX);
-    const k = (s >= 1 ? Math.floor(s) : s) / d;
-    lbImg.style.width  = (nw * k) + 'px';
-    lbImg.style.height = (nh * k) + 'px';
-  }
-
-  function openLightbox(src){
-    lbImg.style.width = lbImg.style.height = '';
-    lbCap.innerHTML = CAPTIONS.get(urlKey(src)) || '';
-    lbImg.onload = fitLightbox;
-    lbImg.src = src;
-    lb.hidden = false;
-    if(lbImg.complete) fitLightbox();
-  }
-
-  function closeLightbox(){
-    lb.hidden = true;
-    lbImg.removeAttribute('src');
-    lbCap.innerHTML = '';
-  }
-
-  grid.addEventListener('click', e => {
-    if(e.target.classList && e.target.classList.contains('plate')) openLightbox(e.target.src);
-  });
-  // only a click on the backdrop itself closes: the image and its caption
-  // (whose links should work) count as the preview
-  lb.addEventListener('click', e => { if(e.target === lb) closeLightbox(); });
-  addEventListener('keydown', e => { if(e.key === 'Escape' && !lb.hidden) closeLightbox(); });
-  addEventListener('resize', () => { if(!lb.hidden) fitLightbox(); });
+  // the grid's gifs open the shared viewer; prev / next follow grid order
+  siteLightbox.gallery('#grid .plate');
 
   /* ---------- go ---------- */
 
