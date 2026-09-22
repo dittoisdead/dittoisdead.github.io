@@ -66,7 +66,11 @@
     cursor:zoom-out;
   }
   #lightbox[hidden]{display:none}
-  #lb-img{display:block; border:1px solid var(--border); background:var(--panel); cursor:default}
+  #lb-fig{margin:0; display:flex; flex-direction:column; align-items:center; cursor:default}
+  #lb-img{display:block; border:1px solid var(--border); background:var(--panel)}
+  /* same caption styling as the gifs page lightbox */
+  #lb-cap{margin-top:.85rem; max-width:60ch; color:var(--text-dim); font-size:.95rem; text-align:center}
+  #lb-cap:empty{display:none}
   body.hard #lb-img{image-rendering:pixelated; image-rendering:crisp-edges}
 
   /* ---------- drag handles ---------- */
@@ -105,14 +109,16 @@
 
 <div id="grid"></div>
 
-<div id="lightbox" hidden><img id="lb-img" alt=""></div>
+<div id="lightbox" hidden>
+  <figure id="lb-fig"><img id="lb-img" alt=""><figcaption id="lb-cap"></figcaption></figure>
+</div>
 
 <script>
 (function(){
   // Target cell size in DEVICE pixels, so OS display scaling doesn't change the
-  // count. Half a 4K screen is ~1920 device px wide, giving 4 columns there and
-  // 8 when fullscreen. Raise it for fewer, bigger cells; lower it for more.
-  const CELL = 480;
+  // count. Half a 4K screen is ~1920 device px wide, giving 5 columns there and
+  // 11 when fullscreen. Raise it for fewer, bigger cells; lower it for more.
+  const CELL = 360;
   let COLS = 4;       // columns across the page
   let SCREEN = 4;     // rows that fit in one screen
   let ROWS = 4;       // rows in the whole page, enough to hold every gif
@@ -218,7 +224,8 @@
       last = bag[draw++];
       out.push(LINES[last]);
     }
-    return out.join(' ').split(' ');
+    // split on any run of spaces, so stray or trailing spaces in LINES are harmless
+    return out.join(' ').split(/\s+/).filter(Boolean);
   }
 
   /* ---------- gifs ---------- */
@@ -246,6 +253,12 @@
     'verlet/repetition.gif', 'verlet/worms.gif'
   ].map(f => 'images/gifs/' + f);
 
+  // Captions are read from the same place: the <figcaption> under each gif in
+  // gifs.html's lightboxes. Edit a caption there and both pages show it.
+  // Keyed by absolute URL, so "nectro 2.gif" and "nectro%202.gif" match.
+  const CAPTIONS = new Map();
+  const urlKey = src => new URL(src, location.href).href;
+
   async function loadGifs(){
     try{
       const res = await fetch('gifs.html', { cache: 'no-cache' });
@@ -256,7 +269,13 @@
         [...doc.querySelectorAll('.grid img')].map(i => i.getAttribute('src')).filter(Boolean)
       )];
       if(found.length) GIFS = found;
-    } catch(e){ /* keep the built-in list */ }
+
+      for(const shot of doc.querySelectorAll('.lightbox .shot')){
+        const img = shot.querySelector('img'), cap = shot.querySelector('figcaption');
+        const html = cap ? cap.innerHTML.trim() : '';
+        if(img && html) CAPTIONS.set(urlKey(img.getAttribute('src')), html);
+      }
+    } catch(e){ /* keep the built-in list, no captions */ }
   }
 
   const shuffled = n => {
@@ -676,6 +695,7 @@
 
   const lb = document.getElementById('lightbox');
   const lbImg = document.getElementById('lb-img');
+  const lbCap = document.getElementById('lb-cap');
 
   // At most 2 screen pixels per gif pixel, smaller if the screen can't fit it.
   // Worked out in DEVICE pixels, so display scaling can't inflate it, and in
@@ -686,7 +706,9 @@
     const nw = lbImg.naturalWidth, nh = lbImg.naturalHeight;
     if(!nw || !nh) return;
     const d = window.devicePixelRatio || 1;
-    const fit = Math.min(innerWidth * 0.9 / nw, innerHeight * 0.85 / nh) * d;
+    // leave room under the image for the caption, if there is one
+    const capH = lbCap.innerHTML ? lbCap.offsetHeight + 14 : 0;
+    const fit = Math.min(innerWidth * 0.9 / nw, (innerHeight * 0.85 - capH) / nh) * d;
     const s = Math.min(fit, LB_MAX);
     const k = (s >= 1 ? Math.floor(s) : s) / d;
     lbImg.style.width  = (nw * k) + 'px';
@@ -695,6 +717,7 @@
 
   function openLightbox(src){
     lbImg.style.width = lbImg.style.height = '';
+    lbCap.innerHTML = CAPTIONS.get(urlKey(src)) || '';
     lbImg.onload = fitLightbox;
     lbImg.src = src;
     lb.hidden = false;
@@ -704,12 +727,15 @@
   function closeLightbox(){
     lb.hidden = true;
     lbImg.removeAttribute('src');
+    lbCap.innerHTML = '';
   }
 
   grid.addEventListener('click', e => {
     if(e.target.classList && e.target.classList.contains('plate')) openLightbox(e.target.src);
   });
-  lb.addEventListener('click', e => { if(e.target !== lbImg) closeLightbox(); });
+  // only a click on the backdrop itself closes: the image and its caption
+  // (whose links should work) count as the preview
+  lb.addEventListener('click', e => { if(e.target === lb) closeLightbox(); });
   addEventListener('keydown', e => { if(e.key === 'Escape' && !lb.hidden) closeLightbox(); });
   addEventListener('resize', () => { if(!lb.hidden) fitLightbox(); });
 
